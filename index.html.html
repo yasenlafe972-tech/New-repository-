@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مدرب اللغات</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a0f;
+    color: #fff;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .screen { display: none; width: 100%; max-width: 420px; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #818cf8, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .subtitle { color: #888; text-align: center; margin-bottom: 30px; }
+
+  .card {
+    background: #13131a;
+    border: 1px solid #2a2a3a;
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; }
+
+  .lang-btn {
+    background: #13131a;
+    border: 2px solid #2a2a3a;
+    border-radius: 16px;
+    padding: 24px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    color: white;
+  }
+  .lang-btn:hover { transform: translateY(-3px); border-color: #818cf8; box-shadow: 0 0 24px rgba(129,140,248,.3); }
+  .lang-btn.selected { border-color: #818cf8; background: #1a1a2e; }
+  .lang-btn .flag { font-size: 2.5rem; }
+  .lang-btn .name { font-weight: 700; font-size: 1.1rem; margin-top: 6px; }
+  .lang-btn .count { color: #555; font-size: .8rem; margin-top: 4px; }
+
+  .mode-section { width: 100%; margin-top: 20px; }
+  .mode-section p { color: #888; font-size: .9rem; text-align: center; margin-bottom: 12px; }
+  .mode-btn {
+    background: #13131a;
+    border: 1px solid #2a2a3a;
+    border-radius: 14px;
+    padding: 18px;
+    text-align: center;
+    cursor: pointer;
+    color: white;
+    transition: background .2s;
+  }
+  .mode-btn:hover { background: #1e1e2e; }
+  .mode-btn .icon { font-size: 1.8rem; }
+  .mode-btn .title { font-weight: 700; margin-top: 4px; }
+  .mode-btn .desc { color: #666; font-size: .8rem; margin-top: 2px; }
+
+  .stats-box { width: 100%; margin-top: 16px; }
+  .stats-grid { display: flex; justify-content: space-around; text-align: center; margin-top: 10px; }
+  .stat-num { font-size: 1.8rem; font-weight: 700; }
+  .stat-label { color: #666; font-size: .75rem; }
+
+  /* Quiz */
+  .progress-bar-bg { background: #1a1a2e; border-radius: 999px; height: 6px; width: 100%; overflow: hidden; margin-bottom: 20px; }
+  .progress-bar { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #818cf8, #34d399); transition: width .4s; }
+
+  .word-card { text-align: center; width: 100%; padding: 36px 20px; margin-bottom: 20px; }
+  .word-display { font-size: 3rem; font-weight: 800; margin-bottom: 8px; }
+  .word-romanized { color: #666; font-size: 1.1rem; }
+  .word-hint { color: #444; font-size: .85rem; margin-top: 10px; }
+
+  .options { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+  .opt-btn {
+    background: #13131a;
+    border: 1.5px solid #2a2a3a;
+    border-radius: 12px;
+    padding: 16px 18px;
+    text-align: right;
+    cursor: pointer;
+    color: white;
+    font-size: 1rem;
+    transition: all .15s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .opt-btn:hover:not(:disabled) { background: #1a1a2e; transform: translateX(4px); }
+  .opt-btn.correct { background: #052e16; border-color: #34d399; }
+  .opt-btn.wrong { background: #2d0a0a; border-color: #f87171; }
+  .opt-letter { color: #555; font-size: .85rem; }
+
+  /* Flashcard */
+  .flip-container { width: 100%; height: 200px; perspective: 1000px; cursor: pointer; margin-bottom: 20px; }
+  .flip-inner { position: relative; width: 100%; height: 100%; transition: transform .5s; transform-style: preserve-3d; }
+  .flip-container.flipped .flip-inner { transform: rotateY(180deg); }
+  .flip-front, .flip-back {
+    position: absolute; inset: 0;
+    background: #13131a; border: 1px solid #2a2a3a;
+    border-radius: 16px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    padding: 24px;
+    text-align: center;
+  }
+  .flip-back { transform: rotateY(180deg); background: #0d1a2e; border-color: #1e3a5f; }
+  .flip-word { font-size: 3rem; font-weight: 800; }
+  .flip-roman { color: #666; margin-top: 6px; }
+  .flip-hint { color: #444; font-size: .8rem; margin-top: 14px; }
+  .flip-translation { font-size: 2.2rem; font-weight: 700; color: #34d399; }
+
+  .nav-row { display: flex; gap: 12px; width: 100%; }
+  .btn-primary {
+    flex: 1; padding: 14px; border-radius: 12px;
+    font-weight: 700; font-size: 1rem; cursor: pointer;
+    background: linear-gradient(135deg, #818cf8, #34d399); color: #000; border: none;
+    transition: opacity .2s;
+  }
+  .btn-primary:hover { opacity: .9; }
+  .btn-secondary {
+    flex: 1; padding: 14px; border-radius: 12px;
+    font-weight: 600; font-size: 1rem; cursor: pointer;
+    background: #1a1a2e; color: #888; border: none;
+    transition: background .2s;
+  }
+  .btn-secondary:hover { background: #1e1e2e; }
+  .btn-secondary:disabled { opacity: .3; cursor: default; }
+
+  .header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 12px; }
+  .back-btn { background: none; border: none; color: #555; cursor: pointer; font-size: .9rem; }
+  .back-btn:hover { color: white; }
+  .counter { color: #888; font-size: .9rem; }
+  .streak { color: #f97316; font-size: .9rem; }
+
+  /* Finish */
+  .finish-card { text-align: center; width: 100%; max-width: 340px; padding: 40px 24px; }
+  .pct { font-size: 5rem; font-weight: 900; margin: 20px 0; }
+  .score-row { display: flex; justify-content: center; gap: 40px; margin-bottom: 28px; }
+  .score-num { font-size: 2rem; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="homeScreen" class="screen active">
+  <div style="font-size:3rem;margin-bottom:10px;">🧠</div>
+  <h1>مدرب اللغات</h1>
+  <p class="subtitle">ياسين — اختار لغة وابدأ</p>
+
+  <div class="grid2">
+    <div class="lang-btn" onclick="selectLang('hebrew')" id="btnHebrew">
+      <div class="flag">🇮🇱</div>
+      <div class="name">عبري</div>
+      <div style="color:#818cf8;font-size:.85rem;margin-top:2px;" dir="ltr">עברית</div>
+      <div class="count">20 كلمة</div>
+    </div>
+    <div class="lang-btn" onclick="selectLang('spanish')" id="btnSpanish">
+      <div class="flag">🇪🇸</div>
+      <div class="name">إسباني</div>
+      <div style="color:#34d399;font-size:.85rem;margin-top:2px;" dir="ltr">Español</div>
+      <div class="count">20 كلمة</div>
+    </div>
+  </div>
+
+  <div class="mode-section" id="modeSection" style="display:none;">
+    <p>اختار الوضع:</p>
+    <div class="grid2">
+      <div class="mode-btn" onclick="startQuiz()">
+        <div class="icon">✏️</div>
+        <div class="title">اختبار</div>
+        <div class="desc">10 أسئلة</div>
+      </div>
+      <div class="mode-btn" onclick="startFlashcard()">
+        <div class="icon">🃏</div>
+        <div class="title">بطاقات</div>
+        <div class="desc">كل الكلمات</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-box card" id="statsBox" style="display:none;margin-top:16px;">
+    <div style="color:#888;font-size:.85rem;">📊 إحصائياتك</div>
+    <div class="stats-grid">
+      <div><div class="stat-num" style="color:#34d399;" id="statCorrect">0</div><div class="stat-label">صح</div></div>
+      <div><div class="stat-num" style="color:#f87171;" id="statWrong">0</div><div class="stat-label">غلط</div></div>
+      <div><div class="stat-num" style="color:#818cf8;" id="statWords">0</div><div class="stat-label">مدرّب</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="quizScreen" class="screen">
+  <div class="header-row">
+    <button class="back-btn" onclick="goHome()">← رجوع</button>
+    <span class="counter" id="quizCounter">1 / 10</span>
+    <span class="streak" id="streakDisplay"></span>
+  </div>
+  <div class="progress-bar-bg"><div class="progress-bar" id="quizProgress" style="width:0%"></div></div>
+  <div class="card word-card">
+    <div class="word-display" id="quizWord"></div>
+    <div class="word-romanized" id="quizRoman"></div>
+    <div class="word-hint">ما معنى هذه الكلمة؟</div>
+  </div>
+  <div class="options" id="optionsContainer"></div>
+</div>
+
+<!-- FLASHCARD -->
+<div id="flashScreen" class="screen">
+  <div class="header-row">
+    <button class="back-btn" onclick="goHome()">← رجوع</button>
+    <span class="counter" id="flashCounter">1 / 20</span>
+    <span></span>
+  </div>
+  <div class="progress-bar-bg"><div class="progress-bar" id="flashProgress" style="width:5%"></div></div>
+
+  <div class="flip-container" id="flipContainer" onclick="flipCard()">
+    <div class="flip-inner">
+      <div class="flip-front">
+        <div class="flip-word" id="flashWord"></div>
+        <div class="flip-roman" id="flashRoman"></div>
+        <div class="flip-hint">اضغط للكشف 👆</div>
+      </div>
+      <div class="flip-back">
+        <div style="color:#888;font-size:.85rem;margin-bottom:10px;">🇸🇦 عربي</div>
+        <div class="flip-translation" id="flashTranslation"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-secondary" id="prevBtn" onclick="prevCard()" disabled>← السابق</button>
+    <button class="btn-primary" onclick="nextCard()">التالي →</button>
+  </div>
+</div>
+
+<!-- FINISH -->
+<div id="finishScreen" class="screen">
+  <div class="card finish-card">
+    <div style="font-size:4rem;" id="finishEmoji">🏆</div>
+    <h2 style="font-size:1.8rem;margin-top:10px;">انتهى!</h2>
+    <div class="pct" id="finishPct">0%</div>
+    <div class="score-row">
+      <div><div class="score-num" style="color:#34d399;" id="finishCorrect">0</div><div style="color:#666;font-size:.8rem;">صح</div></div>
+      <div><div class="score-num" style="color:#f87171;" id="finishWrong">0</div><div style="color:#666;font-size:.8rem;">غلط</div></div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-primary" onclick="retryQuiz()">مرة ثانية</button>
+      <button class="btn-secondary" onclick="goHome()">الرئيسية</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const VOCAB = {
+  hebrew: [
+    { word: "שָׁלוֹם", translation: "مرحبا / سلام", romanized: "Shalom" },
+    { word: "תּוֹדָה", translation: "شكراً", romanized: "Toda" },
+    { word: "כֵּן", translation: "نعم", romanized: "Ken" },
+    { word: "לֹא", translation: "لا", romanized: "Lo" },
+    { word: "מַיִם", translation: "ماء", romanized: "Mayim" },
+    { word: "לֶחֶם", translation: "خبز", romanized: "Lechem" },
+    { word: "בַּיִת", translation: "بيت", romanized: "Bayit" },
+    { word: "יוֹם", translation: "يوم", romanized: "Yom" },
+    { word: "לַיְלָה", translation: "ليل", romanized: "Layla" },
+    { word: "אִישׁ", translation: "رجل", romanized: "Ish" },
+    { word: "אִשָּׁה", translation: "امرأة", romanized: "Isha" },
+    { word: "יֶלֶד", translation: "ولد", romanized: "Yeled" },
+    { word: "אֹכֶל", translation: "طعام", romanized: "Ochel" },
+    { word: "עִיר", translation: "مدينة", romanized: "Ir" },
+    { word: "אֲנִי", translation: "أنا", romanized: "Ani" },
+    { word: "אַתָּה", translation: "أنت (مذكر)", romanized: "Ata" },
+    { word: "הוּא", translation: "هو", romanized: "Hu" },
+    { word: "הִיא", translation: "هي", romanized: "Hi" },
+    { word: "טוֹב", translation: "جيد / حسناً", romanized: "Tov" },
+    { word: "גָּדוֹל", translation: "كبير", romanized: "Gadol" },
+  ],
+  spanish: [
+    { word: "Hola", translation: "مرحبا", romanized: "" },
+    { word: "Gracias", translation: "شكراً", romanized: "" },
+    { word: "Sí", translation: "نعم", romanized: "" },
+    { word: "No", translation: "لا", romanized: "" },
+    { word: "Agua", translation: "ماء", romanized: "" },
+    { word: "Pan", translation: "خبز", romanized: "" },
+    { word: "Casa", translation: "بيت", romanized: "" },
+    { word: "Día", translation: "يوم", romanized: "" },
+    { word: "Noche", translation: "ليل", romanized: "" },
+    { word: "Hombre", translation: "رجل", romanized: "" },
+    { word: "Mujer", translation: "امرأة", romanized: "" },
+    { word: "Niño", translation: "طفل", romanized: "" },
+    { word: "Comida", translation: "طعام", romanized: "" },
+    { word: "Ciudad", translation: "مدينة", romanized: "" },
+    { word: "Yo", translation: "أنا", romanized: "" },
+    { word: "Tú", translation: "أنت", romanized: "" },
+    { word: "Él", translation: "هو", romanized: "" },
+    { word: "Ella", translation: "هي", romanized: "" },
+    { word: "Bueno", translation: "جيد", romanized: "" },
+    { word: "Grande", translation: "كبير", romanized: "" },
+  ]
+};
+
+let currentLang = null;
+let quizQueue = [];
+let quizIndex = 0;
+let quizScore = { correct: 0, wrong: 0 };
+let streak = 0;
+let flashQueue = [];
+let flashIndex = 0;
+let stats = {};
+
+// Load stats
+try { stats = JSON.parse(localStorage.getItem('langStats') || '{}'); } catch {}
+if (!stats.hebrew) stats.hebrew = {};
+if (!stats.spanish) stats.spanish = {};
+
+function saveStats() {
+  try { localStorage.setItem('langStats', JSON.stringify(stats)); } catch {}
+}
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function shuffle(arr) {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
+
+function selectLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('btn' + lang.charAt(0).toUpperCase() + lang.slice(1)).classList.add('selected');
+  document.getElementById('modeSection').style.display = 'block';
+  updateStatsDisplay();
+}
+
+function updateStatsDisplay() {
+  if (!currentLang) return;
+  const s = stats[currentLang];
+  const keys = Object.keys(s);
+  if (keys.length === 0) { document.getElementById('statsBox').style.display = 'none'; return; }
+  document.getElementById('statsBox').style.display = 'block';
+  document.getElementById('statCorrect').textContent = Object.values(s).reduce((a, v) => a + v.correct, 0);
+  document.getElementById('statWrong').textContent = Object.values(s).reduce((a, v) => a + v.wrong, 0);
+  document.getElementById('statWords').textContent = keys.length;
+}
+
+function goHome() {
+  show('homeScreen');
+  updateStatsDisplay();
+}
+
+// ── QUIZ ──
+function startQuiz() {
+  quizQueue = shuffle(VOCAB[currentLang]).slice(0, 10);
+  quizIndex = 0;
+  quizScore = { correct: 0, wrong: 0 };
+  streak = 0;
+  show('quizScreen');
+  renderQuestion();
+}
+
+function retryQuiz() {
+  startQuiz();
+}
+
+function renderQuestion() {
+  const word = quizQueue[quizIndex];
+  document.getElementById('quizCounter').textContent = `${quizIndex + 1} / ${quizQueue.length}`;
+  document.getElementById('quizProgress').style.width = `${(quizIndex / quizQueue.length) * 100}%`;
+  document.getElementById('quizWord').textContent = word.word;
+  document.getElementById('quizWord').dir = currentLang === 'hebrew' ? 'rtl' : 'ltr';
+  document.getElementById('quizRoman').textContent = word.romanized || '';
+  document.getElementById('streakDisplay').textContent = streak >= 3 ? `🔥 ${streak}` : '';
+
+  // Build options
+  const all = VOCAB[currentLang];
+  const wrongs = shuffle(all.filter(w => w.word !== word.word)).slice(0, 3).map(w => w.translation);
+  const opts = shuffle([word.translation, ...wrongs]);
+
+  const letters = ['أ', 'ب', 'ج', 'د'];
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+  opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.innerHTML = `<span>${opt}</span><span class="opt-letter">${letters[i]})</span>`;
+    btn.onclick = () => handleAnswer(opt, word.translation, btn, opts);
+    container.appendChild(btn);
+  });
+}
+
+function handleAnswer(selected, correct, clickedBtn, opts) {
+  document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+  const allBtns = document.querySelectorAll('.opt-btn');
+  const isCorrect = selected === correct;
+
+  // Update stats
+  const key = quizQueue[quizIndex].word;
+  if (!stats[currentLang][key]) stats[currentLang][key] = { correct: 0, wrong: 0 };
+  if (isCorrect) {
+    stats[currentLang][key].correct++;
+    quizScore.correct++;
+    streak++;
+    clickedBtn.classList.add('correct');
+    clickedBtn.querySelector('span:last-child').textContent = '✅';
+  } else {
+    stats[currentLang][key].wrong++;
+    quizScore.wrong++;
+    streak = 0;
+    clickedBtn.classList.add('wrong');
+    clickedBtn.querySelector('span:last-child').textContent = '❌';
+    // Show correct
+    allBtns.forEach(b => {
+      if (b.querySelector('span').textContent === correct) b.classList.add('correct');
+    });
+  }
+  saveStats();
+
+  setTimeout(() => {
+    quizIndex++;
+    if (quizIndex >= quizQueue.length) showFinish();
+    else renderQuestion();
+  }, 900);
+}
+
+function showFinish() {
+  const total = quizScore.correct + quizScore.wrong;
+  const pct = Math.round((quizScore.correct / total) * 100);
+  document.getElementById('finishEmoji').textContent = pct >= 80 ? '🏆' : pct >= 60 ? '👍' : '💪';
+  document.getElementById('finishPct').textContent = pct + '%';
+  document.getElementById('finishPct').style.color = pct >= 80 ? '#34d399' : pct >= 60 ? '#fbbf24' : '#f87171';
+  document.getElementById('finishCorrect').textContent = quizScore.correct;
+  document.getElementById('finishWrong').textContent = quizScore.wrong;
+  show('finishScreen');
+}
+
+// ── FLASHCARD ──
+function startFlashcard() {
+  flashQueue = shuffle(VOCAB[currentLang]);
+  flashIndex = 0;
+  show('flashScreen');
+  document.getElementById('flipContainer').classList.remove('flipped');
+  renderFlash();
+}
+
+function renderFlash() {
+  const word = flashQueue[flashIndex];
+  document.getElementById('flashCounter').textContent = `${flashIndex + 1} / ${flashQueue.length}`;
+  document.getElementById('flashProgress').style.width = `${((flashIndex + 1) / flashQueue.length) * 100}%`;
+  document.getElementById('flashWord').textContent = word.word;
+  document.getElementById('flashWord').dir = currentLang === 'hebrew' ? 'rtl' : 'ltr';
+  document.getElementById('flashRoman').textContent = word.romanized || '';
+  document.getElementById('flashTranslation').textContent = word.translation;
+  document.getElementById('prevBtn').disabled = flashIndex === 0;
+}
+
+function flipCard() {
+  document.getElementById('flipContainer').classList.toggle('flipped');
+}
+
+function nextCard() {
+  if (flashIndex + 1 >= flashQueue.length) { goHome(); return; }
+  flashIndex++;
+  document.getElementById('flipContainer').classList.remove('flipped');
+  renderFlash();
+}
+
+function prevCard() {
+  if (flashIndex === 0) return;
+  flashIndex--;
+  document.getElementById('flipContainer').classList.remove('flipped');
+  renderFlash();
+}
+</script>
+</body>
+</html>
